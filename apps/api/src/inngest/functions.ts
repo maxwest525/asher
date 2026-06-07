@@ -59,7 +59,36 @@ export const researchDaily = inngest.createFunction(
   },
   { cron: '0 9 * * *' },
   async ({ event, step }) => {
-    return step.run('run-niche-research', () => runResearch(runId(event)));
+    const rid = runId(event);
+
+    await step.run('run-niche-research', () => runResearch(rid));
+
+    const niches = await step.run('fetch-top-niches', async () => {
+      const db = createServiceClient();
+      const { data } = await db
+        .from('niches')
+        .select('id')
+        .gt('opportunity_score', 0)
+        .order('opportunity_score', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    });
+
+    await Promise.all(
+      niches.map((niche) =>
+        step.run(`run-competitor-research-${niche.id}`, () =>
+          runAgent(researchAgents.competitorAgent, { nicheId: niche.id }, { runId: rid }),
+        ),
+      ),
+    );
+
+    await Promise.all(
+      niches.map((niche) =>
+        step.run(`run-keyword-maps-${niche.id}`, () =>
+          runAgent(researchAgents.keywordAgent, { nicheId: niche.id }, { runId: rid }),
+        ),
+      ),
+    );
   },
 );
 
@@ -70,7 +99,36 @@ export const researchOnDemand = inngest.createFunction(
   },
   { event: 'pod/research.run' },
   async ({ event, step }) => {
-    return step.run('run-niche-research', () => runResearch(runId(event)));
+    const rid = runId(event);
+
+    await step.run('run-niche-research', () => runResearch(rid));
+
+    const niches = await step.run('fetch-top-niches', async () => {
+      const db = createServiceClient();
+      const { data } = await db
+        .from('niches')
+        .select('id')
+        .gt('opportunity_score', 0)
+        .order('opportunity_score', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    });
+
+    await Promise.all(
+      niches.map((niche) =>
+        step.run(`run-competitor-research-${niche.id}`, () =>
+          runAgent(researchAgents.competitorAgent, { nicheId: niche.id }, { runId: rid }),
+        ),
+      ),
+    );
+
+    await Promise.all(
+      niches.map((niche) =>
+        step.run(`run-keyword-maps-${niche.id}`, () =>
+          runAgent(researchAgents.keywordAgent, { nicheId: niche.id }, { runId: rid }),
+        ),
+      ),
+    );
   },
 );
 

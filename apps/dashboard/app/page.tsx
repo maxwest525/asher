@@ -18,6 +18,11 @@ export default function DashboardPage() {
           → Review Pending Products
         </a>
       </p>
+      <p>
+        <a href="/winners" style={{ display: 'inline-block', padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: 6, textDecoration: 'none', fontWeight: 600 }}>
+          → View Winners
+        </a>
+      </p>
       <CommandButtons />
     </main>
   );
