@@ -13,6 +13,11 @@ export default function DashboardPage() {
           → Review Pending Designs
         </a>
       </p>
+      <p>
+        <a href="/products" style={{ display: 'inline-block', padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: 6, textDecoration: 'none', fontWeight: 600 }}>
+          → Review Pending Products
+        </a>
+      </p>
       <CommandButtons />
     </main>
   );
