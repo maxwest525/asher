@@ -126,3 +126,10 @@ alter table products            enable row level security;
 alter table daily_metrics       enable row level security;
 alter table winners             enable row level security;
 alter table etsy_tokens         enable row level security;
+
+-- Public storage bucket for design SVG and PNG assets.
+-- The design agent uploads rendered SVGs here; the bucket URL is stored in
+-- designs.svg_url and used by Printify's upload endpoint.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('designs', 'designs', true, 10485760, array['image/svg+xml','image/png','image/jpeg'])
+on conflict (id) do nothing;
