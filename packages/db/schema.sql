@@ -17,7 +17,8 @@ create table if not exists niches (
   seasonality       text,
   product_angle     text,
   opportunity_score int  not null default 0,
-  created_at        timestamptz not null default now()
+  created_at        timestamptz not null default now(),
+  unique (niche, keyword)
 );
 
 -- Competitor listing snapshots ("what's working" DB).
@@ -48,7 +49,8 @@ create table if not exists keyword_maps (
   pinterest_keywords text[] not null default '{}',
   collection_name    text not null,
   url_slug           text not null,
-  created_at         timestamptz not null default now()
+  created_at         timestamptz not null default now(),
+  unique (niche_id)
 );
 
 -- Generated designs (typography/vector first). Gated by human approval.

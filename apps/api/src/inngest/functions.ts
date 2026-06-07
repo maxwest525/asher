@@ -33,22 +33,9 @@ const SEED_TOPICS = [
 ];
 
 async function runResearch(rid: string) {
+  // The agent saves each niche via its save_niche tool call as it runs;
+  // we do not upsert again here to avoid creating duplicate rows.
   const niches = await runAgent(researchAgents.nicheResearchAgent, { seedTopics: SEED_TOPICS }, { runId: rid });
-  const db = createServiceClient();
-  if (niches.length > 0) {
-    await db.from('niches').upsert(
-      niches.map((n) => ({
-        niche: n.niche,
-        keyword: n.keyword,
-        buyer_intent: n.buyer_intent,
-        trend_score: n.trend_score,
-        competition_score: n.competition_score,
-        seasonality: n.seasonality,
-        product_angle: n.product_angle,
-        opportunity_score: n.opportunity_score,
-      })),
-    );
-  }
   return { nicheCount: niches.length };
 }
 
@@ -133,8 +120,37 @@ export const researchOnDemand = inngest.createFunction(
 );
 
 // ---------------------------------------------------------------------------
-// Design generation — picks top un-designed niches and generates slogans/SVGs
+// Design generation — picks top niches and generates slogans/SVGs
 // ---------------------------------------------------------------------------
+
+export const designsGenerateNightly = inngest.createFunction(
+  {
+    id: 'designs-generate-nightly',
+    retries: 2,
+  },
+  { cron: '0 11 * * *' },
+  async ({ event, step }) => {
+    const niches = await step.run('fetch-top-niches', async () => {
+      const db = createServiceClient();
+      const { data } = await db
+        .from('niches')
+        .select('id, niche')
+        .order('opportunity_score', { ascending: false })
+        .limit(5);
+      return data ?? [];
+    });
+
+    const results = await Promise.all(
+      niches.map((niche) =>
+        step.run(`generate-designs-${niche.id}`, () =>
+          runAgent(designAgent, { nicheId: niche.id, count: 4 }, { runId: runId(event) }),
+        ),
+      ),
+    );
+
+    return { designed: results.flat().length };
+  },
+);
 
 export const designsGenerate = inngest.createFunction(
   {
@@ -296,6 +312,7 @@ export const analyticsNightly = inngest.createFunction(
 export const functions = [
   researchDaily,
   researchOnDemand,
+  designsGenerateNightly,
   designsGenerate,
   productsPublish,
   analyticsWinners,
