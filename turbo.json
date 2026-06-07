@@ -1,0 +1,44 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "SHOPIFY_ADMIN_TOKEN",
+    "SHOPIFY_STOREFRONT_TOKEN",
+    "SHOPIFY_STORE_DOMAIN",
+    "PRINTIFY_TOKEN",
+    "PRINTIFY_SHOPIFY_SHOP_ID",
+    "PRINTIFY_ETSY_SHOP_ID",
+    "ETSY_CLIENT_ID",
+    "ETSY_REFRESH_TOKEN",
+    "PINTEREST_ACCESS_TOKEN",
+    "GA4_PROPERTY_ID",
+    "DATAFORSEO_LOGIN",
+    "DATAFORSEO_PASSWORD",
+    "ANTHROPIC_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "INNGEST_EVENT_KEY",
+    "INNGEST_SIGNING_KEY"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "lint": {},
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}
