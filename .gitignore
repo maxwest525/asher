@@ -21,6 +21,9 @@ out/
 npm-debug.log*
 pnpm-debug.log*
 
+# Claude Code agent worktrees (created by parallel subagents)
+.claude/worktrees/
+
 # os / editor
 .DS_Store
 .idea/
