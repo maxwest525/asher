@@ -107,6 +107,13 @@ create table if not exists winners (
   scaled         boolean not null default false
 );
 
+-- Token store for OAuth credentials that rotate at runtime (e.g. Etsy refresh token).
+-- The Etsy client upserts the rotated refresh_token here after every token exchange.
+create table if not exists etsy_tokens (
+  key   text primary key,
+  value text not null
+);
+
 -- Enable RLS everywhere. Server uses the service-role key (bypasses RLS);
 -- the anon client gets no access until you add explicit policies.
 alter table niches              enable row level security;
@@ -116,3 +123,4 @@ alter table designs             enable row level security;
 alter table products            enable row level security;
 alter table daily_metrics       enable row level security;
 alter table winners             enable row level security;
+alter table etsy_tokens         enable row level security;
