@@ -6,7 +6,6 @@ import { useState } from 'react';
 const ACTIONS: { label: string; event: string }[] = [
   { label: 'Run Research', event: 'pod/research.run' },
   { label: 'Generate Shirts', event: 'pod/designs.generate' },
-  { label: 'Approve Designs', event: 'pod/designs.approve' },
   { label: 'Publish Batch', event: 'pod/products.publish' },
   { label: 'Check Winners', event: 'pod/analytics.winners' },
   { label: 'Scale Winners', event: 'pod/winners.scale' },
