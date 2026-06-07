@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { AgentDefinition } from '../runtime.js';
 import type { Design } from '@pod/db';
-import { createServiceClient } from '@pod/db';
+import { createServiceClient, uploadDesignSvg } from '@pod/db';
 import { design, research } from '@pod/tools';
 
 /** slogan + design agent. Produces typography-first designs in 'pending' approval state. */
@@ -80,8 +80,9 @@ const tools: Anthropic.Tool[] = [
   {
     name: 'render_svg',
     description:
-      'Render a master SVG for a slogan using a layout and color preset. ' +
-      'Returns { svg: string } containing the shirt-safe SVG markup.',
+      'Render a master SVG for a slogan using a layout and color preset, then upload it to ' +
+      'storage. Returns { svg_url: string | null, metadata: object }. Pass svg_url directly ' +
+      'as the svg_url argument to save_design.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -163,7 +164,16 @@ async function executeTool(
       heightPx: PRINT_HEIGHT_PX,
     });
 
-    return { svg: artifact.svg };
+    // Upload to Supabase Storage so save_design receives a real public URL.
+    const slug = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    try {
+      const svgUrl = await uploadDesignSvg(artifact.svg, slug);
+      return { svg_url: svgUrl, metadata: artifact.metadata };
+    } catch {
+      // Storage unavailable (e.g. env not configured) — return the markup so
+      // the agent can still save the design record with a null svg_url.
+      return { svg_url: null, metadata: artifact.metadata };
+    }
   }
 
   if (name === 'save_design') {
