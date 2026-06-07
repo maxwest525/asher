@@ -1,0 +1,33 @@
+{
+  "name": "@pod/tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./shopify": { "types": "./dist/shopify/index.d.ts", "default": "./dist/shopify/index.js" },
+    "./printify": { "types": "./dist/printify/index.d.ts", "default": "./dist/printify/index.js" },
+    "./etsy": { "types": "./dist/etsy/index.d.ts", "default": "./dist/etsy/index.js" },
+    "./pinterest": { "types": "./dist/pinterest/index.d.ts", "default": "./dist/pinterest/index.js" },
+    "./ga4": { "types": "./dist/ga4/index.d.ts", "default": "./dist/ga4/index.js" },
+    "./research": { "types": "./dist/research/index.d.ts", "default": "./dist/research/index.js" },
+    "./design": { "types": "./dist/design/index.d.ts", "default": "./dist/design/index.js" },
+    "./analytics": { "types": "./dist/analytics/index.d.ts", "default": "./dist/analytics/index.js" }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json && node --test \"dist/**/*.test.js\"",
+    "lint": "echo \"(no lint configured for @pod/tools)\"",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@pod/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "typescript": "^5.6.2"
+  }
+}

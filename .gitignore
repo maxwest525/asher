@@ -1,1 +1,27 @@
+# agent-skills plugin (cloned at session start)
 agent-skills/
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.next/
+out/
+.turbo/
+
+# env & secrets
+.env
+.env.local
+.env*.local
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# os / editor
+.DS_Store
+.idea/
+*.tsbuildinfo
