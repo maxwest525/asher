@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd ../.. && pnpm turbo build --filter=@pod/api",
-  "outputDirectory": "apps/api/.next",
+  "outputDirectory": ".next",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs"
 }
