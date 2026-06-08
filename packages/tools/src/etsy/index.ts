@@ -167,3 +167,27 @@ export async function getListingStats(listingId: string): Promise<Record<string,
     traffic_source: { value: 0, isEstimated: true },
   };
 }
+
+export interface EtsyReceipt {
+  receipt_id: number;
+  was_paid: boolean;
+  transactions: Array<{
+    listing_id: number;
+    product_id: number;
+    quantity: number;
+    price: { amount: number; divisor: number };
+    shipping_cost?: { amount: number; divisor: number };
+  }>;
+}
+
+export async function getReceipt(shopId: string, receiptId: number): Promise<EtsyReceipt> {
+  const { accessToken } = await refreshAccessToken();
+  const clientId = env.etsy.clientId;
+  return request<EtsyReceipt>(`${BASE}/shops/${shopId}/receipts/${receiptId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'x-api-key': clientId,
+    },
+  });
+}
