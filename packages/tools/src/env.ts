@@ -43,6 +43,9 @@ export const env = {
     get refreshToken() {
       return required('ETSY_REFRESH_TOKEN');
     },
+    get clientSecret() {
+      return required('ETSY_CLIENT_SECRET');
+    },
   },
   pinterest: {
     get accessToken() {

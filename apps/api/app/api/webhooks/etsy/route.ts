@@ -1,57 +1,70 @@
 import { NextResponse } from 'next/server';
-import { shopify } from '@pod/tools';
+import crypto from 'node:crypto';
 import { createServiceClient } from '@pod/db';
+import { getReceipt } from '@pod/tools/etsy';
 
-interface ShopifyOrderLineItem {
-  product_id: number;
-  quantity: number;
-  price: string;
-}
-
-interface ShopifyOrderPaidPayload {
-  id: number;
-  line_items: ShopifyOrderLineItem[];
-  total_price: string;
+interface EtsyReceiptWebhookPayload {
+  event_type: string;
+  shop_id: number;
+  data: { receipt_id: number };
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
-  const hmac = req.headers.get('x-shopify-hmac-sha256');
-  if (!secret || !hmac) {
+  const secret = process.env.ETSY_CLIENT_SECRET;
+  const shopId = process.env.ETSY_SHOP_ID;
+  const signature = req.headers.get('x-signature');
+
+  if (!secret || !shopId || !signature) {
     return NextResponse.json({ error: 'missing signature' }, { status: 401 });
   }
 
   const rawBody = await req.text();
-  if (!shopify.verifyWebhookHmac(rawBody, hmac, secret)) {
+
+  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  const receivedBuf = Buffer.from(signature, 'utf8');
+
+  if (
+    expectedBuf.length !== receivedBuf.length ||
+    !crypto.timingSafeEqual(expectedBuf, receivedBuf)
+  ) {
     return NextResponse.json({ error: 'invalid signature' }, { status: 401 });
   }
 
-  const topic = req.headers.get('x-shopify-topic');
-  if (topic !== 'orders/paid') {
+  const payload = JSON.parse(rawBody) as EtsyReceiptWebhookPayload;
+
+  if (payload.event_type !== 'orders:receipt') {
     return NextResponse.json({ ok: true });
   }
 
-  const payload = JSON.parse(rawBody) as ShopifyOrderPaidPayload;
+  const receiptId = payload.data.receipt_id;
+  const receipt = await getReceipt(shopId, receiptId);
+
+  if (!receipt.was_paid) {
+    return NextResponse.json({ ok: true });
+  }
+
   const db = createServiceClient();
   const today = new Date().toISOString().slice(0, 10);
 
-  for (const item of payload.line_items) {
+  for (const tx of receipt.transactions) {
     const { data: product } = await db
       .from('products')
       .select('id')
-      .eq('shopify_product_id', String(item.product_id))
+      .eq('etsy_listing_id', String(tx.listing_id))
       .maybeSingle();
 
     if (!product) continue;
 
     const productId = product.id as string;
-    const itemRevenue = parseFloat(item.price);
+    const itemRevenue = (tx.price.amount / tx.price.divisor) * tx.quantity;
 
     await db.from('daily_metrics').upsert(
       {
         product_id: productId,
         date: today,
-        channel: 'shopify',
+        channel: 'etsy',
         sales: 0,
         fulfillment_cost: 0,
         revenue: 0,
@@ -68,7 +81,7 @@ export async function POST(req: Request) {
       .select('sales, revenue, conversions')
       .eq('product_id', productId)
       .eq('date', today)
-      .eq('channel', 'shopify')
+      .eq('channel', 'etsy')
       .single();
 
     if (!existing) continue;
@@ -76,13 +89,13 @@ export async function POST(req: Request) {
     await db
       .from('daily_metrics')
       .update({
-        sales: (existing.sales as number) + 1,
+        sales: (existing.sales as number) + tx.quantity,
         revenue: (existing.revenue as number) + itemRevenue,
         conversions: (existing.conversions as number) + 1,
       })
       .eq('product_id', productId)
       .eq('date', today)
-      .eq('channel', 'shopify');
+      .eq('channel', 'etsy');
   }
 
   return NextResponse.json({ ok: true });

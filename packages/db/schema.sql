@@ -17,7 +17,8 @@ create table if not exists niches (
   seasonality       text,
   product_angle     text,
   opportunity_score int  not null default 0,
-  created_at        timestamptz not null default now()
+  created_at        timestamptz not null default now(),
+  unique (niche, keyword)
 );
 
 -- Competitor listing snapshots ("what's working" DB).
@@ -48,7 +49,8 @@ create table if not exists keyword_maps (
   pinterest_keywords text[] not null default '{}',
   collection_name    text not null,
   url_slug           text not null,
-  created_at         timestamptz not null default now()
+  created_at         timestamptz not null default now(),
+  unique (niche_id)
 );
 
 -- Generated designs (typography/vector first). Gated by human approval.
@@ -107,6 +109,13 @@ create table if not exists winners (
   scaled         boolean not null default false
 );
 
+-- Token store for OAuth credentials that rotate at runtime (e.g. Etsy refresh token).
+-- The Etsy client upserts the rotated refresh_token here after every token exchange.
+create table if not exists etsy_tokens (
+  key   text primary key,
+  value text not null
+);
+
 -- Enable RLS everywhere. Server uses the service-role key (bypasses RLS);
 -- the anon client gets no access until you add explicit policies.
 alter table niches              enable row level security;
@@ -116,3 +125,11 @@ alter table designs             enable row level security;
 alter table products            enable row level security;
 alter table daily_metrics       enable row level security;
 alter table winners             enable row level security;
+alter table etsy_tokens         enable row level security;
+
+-- Public storage bucket for design SVG and PNG assets.
+-- The design agent uploads rendered SVGs here; the bucket URL is stored in
+-- designs.svg_url and used by Printify's upload endpoint.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('designs', 'designs', true, 10485760, array['image/svg+xml','image/png','image/jpeg'])
+on conflict (id) do nothing;

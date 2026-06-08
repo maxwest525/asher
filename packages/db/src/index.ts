@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export * from './types.js';
+export * from './storage.js';
 
 /**
  * Server-only Supabase client (uses the service-role key). Never import this
